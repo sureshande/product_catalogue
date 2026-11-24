@@ -1,0 +1,90 @@
+# One command: docker compose up --build
+#   App      http://localhost:8080
+#   Inbox    http://localhost:8025   (Mailpit — enquiry emails land here)
+# Works without a .env file; copy .env.example to .env only to override defaults.
+
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: catalogue
+      MYSQL_USER: catalogue
+      MYSQL_PASSWORD: ${DB_PASSWORD:-catalogue}
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u catalogue -p$$MYSQL_PASSWORD --silent"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports:
+      - "8025:8025"
+
+  api:
+    build: ./backend
+    image: product-catalogue-api
+    environment: &backend-env
+      APP_NAME: Product Catalogue
+      APP_ENV: local
+      APP_DEBUG: "false"
+      APP_KEY: ${APP_KEY:-}
+      APP_URL: http://localhost:8080
+      FRONTEND_URL: http://localhost:8080
+      LOG_CHANNEL: stderr
+      TRUSTED_PROXIES: "*"   # only nginx can reach the API (port 8000 is not published)
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: catalogue
+      DB_USERNAME: catalogue
+      DB_PASSWORD: ${DB_PASSWORD:-catalogue}
+      SESSION_DRIVER: array
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_FROM_ADDRESS: catalogue@example.test
+      MAIL_FROM_NAME: Product Catalogue
+      SALES_INBOX_EMAIL: ${SALES_INBOX_EMAIL:-sales@example.test}
+      FAKESTORE_BASE_URL: ${FAKESTORE_BASE_URL:-https://fakestoreapi.com}
+      CATALOGUE_CACHE_TTL: ${CATALOGUE_CACHE_TTL:-600}
+      CATALOGUE_HOMEPAGE_LIMIT: ${CATALOGUE_HOMEPAGE_LIMIT:-5}
+      CATALOGUE_TOP_RATED_LIMIT: ${CATALOGUE_TOP_RATED_LIMIT:-3}
+      RUN_MIGRATIONS: "true"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8000/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  worker:
+    build: ./backend            # same image as api (built once, cached)
+    image: product-catalogue-api
+    command: ["php", "artisan", "queue:work", "--sleep=1", "--max-time=3600"]
+    environment:
+      <<: *backend-env
+      RUN_MIGRATIONS: "false"
+    depends_on:
+      api:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+
+  web:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  mysql-data:

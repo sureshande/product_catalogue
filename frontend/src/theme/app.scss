@@ -1,0 +1,148 @@
+@import './tokens';
+
+// ---- Shell: top bar + sidebar + content (partner-portal layout) ----
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  height: var(--topbar-height);
+  background: var(--bs-body-bg);
+  box-shadow: 0 0.125rem 0.5rem rgba(75, 70, 92, 0.08);
+}
+
+.brand-badge {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  background: var(--accent-gradient);
+  color: #fff;
+}
+
+.sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  background: var(--bs-body-bg);
+  border-right: 1px solid var(--bs-border-color-translucent);
+  min-height: calc(100vh - var(--topbar-height));
+
+  @include media-breakpoint-down(lg) {
+    position: fixed;
+    top: var(--topbar-height);
+    bottom: 0;
+    left: 0;
+    z-index: 1030;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease-in-out;
+
+    &.open {
+      transform: none;
+      box-shadow: 0 0 2rem rgba(0, 0, 0, 0.2);
+    }
+  }
+}
+
+.menu-category {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bs-secondary-color);
+}
+
+.menu-link {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: $border-radius;
+  color: var(--bs-body-color);
+  text-decoration: none;
+
+  &:hover {
+    background: var(--bs-tertiary-bg);
+  }
+
+  // Gradient text for the active item, as in the portal menu.
+  &.active {
+    font-weight: 600;
+    background: var(--bs-tertiary-bg);
+
+    span,
+    i {
+      background: var(--accent-gradient);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+  }
+}
+
+.content {
+  min-width: 0; // lets grids shrink inside the flex row
+}
+
+// ---- Product cards ----
+
+.product-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover,
+  &:focus-within {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1.5rem rgba(75, 70, 92, 0.16);
+  }
+
+  .product-image {
+    height: 11rem;
+    padding: 1rem;
+    object-fit: contain;
+    background: #fff;
+    border-radius: $border-radius $border-radius 0 0;
+  }
+
+  .product-title {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.6em;
+  }
+}
+
+.product-detail-image {
+  max-height: 26rem;
+  object-fit: contain;
+  background: #fff;
+}
+
+.btn-accent {
+  background: var(--accent-gradient);
+  border: 0;
+  color: #fff;
+
+  &:hover,
+  &:focus-visible {
+    color: #fff;
+    filter: brightness(1.05);
+  }
+}
+
+.rating-stars {
+  color: #ffb400;
+}
+
+// Honeypot field: off-screen for humans, still in the DOM for bots.
+.hp-field {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+:focus-visible {
+  outline: 2px solid $primary;
+  outline-offset: 2px;
+}
