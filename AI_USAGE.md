@@ -58,7 +58,29 @@ scale path, AWS target) and revised as decisions changed. The code was then buil
 
 ## What I reviewed myself
 
-<!-- Fill in honestly: which files you read line by line, what you changed by hand, anything you'd still question. -->
+**Review that changed the result**, all recorded in the session:
+
+| What I checked | What I found or decided |
+|---|---|
+| The plan's approach to "millions of records" | Accepted designing the seams and documenting the scale path instead of building for scale with 20 products. |
+| Top-rated configuration design | Asked whether one list with a `show_in_homepage` flag was really simpler than two lists, as two tables would be in a database. It wasn't: it needed hidden cross-list rules. Switched to two independent lists. |
+| Categories | Asked for custom categories (Electronics, Home, Books…), accepted that Fake Store doesn't have them, and chose the supplier's real categories over invented mappings. |
+| The running app, used as a customer | Found that clicking × in the search box left stale results on screen. Fixed, with a test that fails without the fix. |
+| Where enquiries are stored | Couldn't see the rows in my MySQL client. Confirmed they are in the Docker MySQL, not my local server; the tests use a separate throwaway database. |
+| Styling and IP | Spotted that the first theme reused the look of an internal product I work on. Had it replaced with a neutral theme built only from MIT-licensed open source. |
+| The enquiry email | Rejected wording spread across config keys. Required the whole email body to be one Blade template, with the subject configurable separately. |
+
+**Files I read line by line:**
+<!-- List only files you actually read, e.g. app/Services/CatalogueService.php, app/Adapters/CachedProductSource.php, config/catalogue.php, resources/views/mail/enquiry.blade.php, frontend/src/api/client.ts, frontend/src/components/EnquiryPanel.tsx -->
+
+**Things I would still question:**
+- **Stale-cache window.** If Fake Store is down, `CachedProductSource` serves data up to 24 hours old with no "may be out of date" signal to the user. Is that acceptable for prices?
+- **Search scalability.** Search filters all products in memory inside the Fake Store adapter. Correct for 20 products; the `ProductQuery` contract is the seam for a database or OpenSearch, but no second implementation proves it yet.
+- **Honeypot.** A filled honeypot returns 422, which tells a bot it was detected. Silently accepting and discarding would be stronger.
+- **Duplicate enquiries.** There's no idempotency key on `POST /api/enquiries`; a network retry could create a duplicate.
+- **APP_KEY per container.** Docker generates a separate key per container when none is set. Fine today because nothing encrypted is shared, but it would break if queued jobs were encrypted or sessions added.
+- **`php artisan serve` in the image.** Fine for local review, not for production. The AWS target in `docs/PLAN.md` uses php-fpm/nginx or Octane.
+- **Config changes need a restart.** Merchandising in config is reviewable and testable, but the owner can't change top-rated products without a deploy. That's the reason for the admin screen in "next steps".
 
 ## Time spent
 
