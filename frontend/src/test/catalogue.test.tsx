@@ -83,6 +83,26 @@ describe('Search', () => {
     expect(await screen.findByText('No products match your search')).toBeInTheDocument()
   })
 
+  it('clears the results when the search box is emptied (e.g. the × button)', async () => {
+    const { user } = renderApp('/search?q=jacket')
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent('Results for “jacket”')
+
+    await user.clear(screen.getByRole('searchbox', { name: 'Search products' }))
+
+    expect(await screen.findByRole('list', { name: 'Top rated products' })).toBeInTheDocument()
+    expect(screen.queryByRole('list', { name: 'Search results' })).not.toBeInTheDocument()
+  })
+
+  it('keeps the current page when the box is emptied outside the results page', async () => {
+    const { user } = renderApp('/categories/electronics')
+    await screen.findByRole('list', { name: 'Top rated in Electronics' })
+
+    await user.type(screen.getByRole('searchbox', { name: 'Search products' }), 'ssd')
+    await user.clear(screen.getByRole('searchbox', { name: 'Search products' }))
+
+    expect(screen.getByRole('list', { name: 'Top rated in Electronics' })).toBeInTheDocument()
+  })
+
   it('disables the Search button until a term is entered', () => {
     renderApp('/')
 

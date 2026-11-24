@@ -1,10 +1,18 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 
 export function SearchBar() {
   const [params] = useSearchParams()
   const [term, setTerm] = useState(params.get('q') ?? '')
   const navigate = useNavigate()
+  const { pathname } = useLocation()
+
+  // Emptying the box (the browser's × button, or deleting the text) on the results page
+  // clears the search: results are driven by the URL, so the URL has to change too.
+  function change(value: string) {
+    setTerm(value)
+    if (value.trim() === '' && pathname === '/search') navigate('/')
+  }
 
   // Keep the box in sync when the URL changes (back button, links).
   useEffect(() => setTerm(params.get('q') ?? ''), [params])
@@ -31,7 +39,7 @@ export function SearchBar() {
           placeholder="Search products…"
           maxLength={100}
           value={term}
-          onChange={(e) => setTerm(e.target.value)}
+          onChange={(e) => change(e.target.value)}
         />
       </div>
       <button type="submit" className="btn btn-primary" disabled={!term.trim()}>
