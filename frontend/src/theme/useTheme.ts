@@ -13,7 +13,7 @@ function initialTheme(): Theme {
   return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
-/** Light/dark via Bootstrap's data-bs-theme, like the portal. Remembered per browser. */
+/** Light/dark via Bootstrap's data-bs-theme. Remembered per browser. */
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>(initialTheme)
 

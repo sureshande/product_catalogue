@@ -10,14 +10,14 @@
 
 | Layer | Choice | Why |
 |---|---|---|
-| Client | **React 18 + TypeScript + Vite + Bootstrap 5** | Web is the fastest path for a reviewer (`docker compose up`, no simulator). Typed API contract. UI follows the partner-portal design language (see §12). |
+| Client | **React 18 + TypeScript + Vite + Bootstrap 5** | Web is the fastest path for a reviewer (`docker compose up`, no simulator). Typed API contract. Neutral, license-safe theme (see §12). |
 | Backend | **Laravel 13 (PHP 8.4), API-only** | Built-in validation, queues, mail, cache, rate limiting, HTTP client fakes. Every concern this PoC has is a first-party Laravel feature, so less custom code to own. |
 | DB | MySQL 8 (local/RDS) · SQLite in-memory for tests | Stores enquiries. RDS-compatible. |
 | Merchandising | `config/catalogue.php` (env-overridable) | Home featured products and, per category, the top-rated count + products are backend config (see §5.4). Categories come from the source. |
 | Queue | `database` driver locally → **SQS** in AWS | Enquiry email never blocks the HTTP request. Driver is config, not code. |
 | Mail | **Mailpit** locally (free, web inbox at :8025) → **SES** in AWS | Reviewer can *see* the sales email arrive. Provider is config, not code. |
 | Cache | `file` locally → **Redis/ElastiCache** in AWS | Protects us from the upstream product API. |
-| Tests | Pest (backend) · Vitest + React Testing Library + MSW (frontend) | Same tools as our portals. |
+| Tests | Pest (backend) · Vitest + React Testing Library + MSW (frontend) | Fast, expressive, and they run offline. |
 
 ---
 
@@ -384,7 +384,7 @@ invalidated when an admin saves. Filling by rating becomes an indexed
 |---|---|---|
 | Admin UI for featured products | Config array (+ env) | Not in acceptance criteria; a DB-backed repository + admin screen slots in behind `FeaturedProductRepository`. |
 | Real search engine | In-memory filter behind interface | 20 products; OpenSearch/FULLTEXT is a new adapter, not a rewrite. |
-| Final visual design | Partner-portal-style Bootstrap theme via tokens | Creative work in progress — tokens make the swap cheap. |
+| Final visual design | Neutral Bootstrap theme via tokens (open-source only) | Creative work in progress — tokens make the swap cheap. |
 | IaC (Terraform/CDK) | Documented target, not built | Time-box; constraint only requires AWS compatibility. |
 | E2E browser tests | Next day | Critical path is covered by API feature tests + component tests. |
 | i18n, analytics, SEO/SSR | Out of scope | Not in criteria. |
@@ -485,7 +485,7 @@ product-catalogue/
     └── src/
         ├── api/                client.ts, types.ts  (only place that knows the URL)
         ├── hooks/              useFeatured, useCategory, useSearch, useProduct
-        ├── layout/             AppShell, Topbar, Sidebar, PageHeader (portal-style shell)
+        ├── layout/             AppShell (top bar + sidebar), PageHeader
         ├── pages/              Home, Category, Search, Product
         ├── components/         ProductCard, ProductGrid, SearchBar, EnquiryOffcanvas,
         │                       RatingStars, EmptyState, ErrorState, LoadingSkeleton
@@ -540,94 +540,58 @@ flowchart LR
 
 ---
 
-## 12. Front-end design — partner-portal design language
+## 12. Front-end design and email template
 
-The React client uses the same look and patterns as our partner portal. The portal is Bootstrap 5 + Sass
-with token overrides, which React can use as-is, so this is a token import rather than a redesign.
+### Look & feel: neutral, license-safe placeholder theme
 
-**Reuse the design language, not the assets.** Rebuild the palette, layout and component patterns from
-public libraries. Do **not** copy the company logo, brand name, the proprietary `csmart-icons` icon font
-or the portal CSS files into a repo that goes to another company. Use Bootstrap Icons and Public Sans
-from Google Fonts instead. You can then honestly say in the interview "I applied a design system I know",
-with no IP problem.
+The creative agency owns the final brand, so the PoC ships a **neutral theme of its own**. Nothing is
+taken from any company's product, logo, fonts or stylesheets.
 
-### Tokens (from `partner-portal/public/css/app.scss`)
+- **Building blocks:** only open-source, MIT-licensed libraries, namely Bootstrap 5 (layout and components)
+  and Bootstrap Icons. Their licences allow commercial use.
+- **Fonts:** the visitor's system UI font stack, with no web-font download and nothing to license.
+- **One swap point:** `frontend/src/theme/tokens.scss` (Bootstrap variable overrides: colours, radius,
+  fonts, dark-mode background). Re-branding means editing this file, not components.
+- **Light/dark mode:** Bootstrap's `data-bs-theme`, with the choice remembered per browser.
 
 ```scss
-// frontend/src/theme/tokens.scss — Bootstrap variable overrides (look & feel swap point)
-$font-family-base: "Public Sans", system-ui, sans-serif;
-$body-bg:      #F8F7FA;   // light background
-$body-bg-dark: #25293C;   // dark background
-$primary:   #159fff;      // azure
-$secondary: #6e7072;      // cement grey
-$success:   #00be86;      // jade
-$info:      #209cee;
-$warning:   #ffdd57;
-$danger:    #ff3860;
-$border-radius: .375rem;
-$enable-negative-margins: true;
-
-@import "bootstrap/scss/bootstrap";
-
-// Accent gradient used for active menu items / primary CTA
-:root { --accent-gradient: linear-gradient(72deg, #18A4FF 22.16%, #05C37F 76.47%); }
-.text-accent { background: var(--accent-gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.btn-accent  { background: var(--accent-gradient); color: #fff; border: 0; }
+// frontend/src/theme/tokens.scss (excerpt)
+$font-family-base: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+$primary: #2c5be0;   $secondary: #5f6b7a;   $success: #1f9d55;   $danger: #d64545;
+$body-bg: #f5f6f8;   $body-color: #1e2430;  $body-bg-dark: #121519;
+@import 'bootstrap/scss/bootstrap';
 ```
 
-Dark mode works like the portal: a toggle in the top bar sets `data-bs-theme="light|dark"` on `<html>`,
-remembered in `localStorage` (a per-viewer convenience only).
+### Screens
 
-### Screen mapping (portal pattern → catalogue screen)
-
-| Portal pattern | Catalogue use |
+| Area | Pattern |
 |---|---|
-| `header-block` top bar (brand left, search centre, actions right) | Brand text, **search bar + Search button**, theme toggle |
-| Sidebar `menu-category` / `menu-link` with gradient active state | **Category links** (from `/api/categories`), active category highlighted |
-| `inner-header` breadcrumb + actions row | Breadcrumb `Home / Category / Product`, result count |
-| Bootstrap cards on `content-wrapper` | **ProductCard** tiles in a responsive grid (`row-cols-1 row-cols-sm-2 row-cols-lg-4`) |
-| Offcanvas side panels (`offcanvas_header_tools`) | **Enquiry form** opens in an offcanvas on the product page |
-| Toast container (top-right) + alert partials | "Thank you" toast + inline success state; API error alerts |
-| `custom-pagination` / `data_empty_page` | Pagination on category/search; empty state for "no matches" |
-| `loading-spinner` | Skeleton cards while loading |
-
-### Wireframes
-
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│ ◆ Catalogue      [ Search products…            ] [Search]     ◐  │  ← top bar
-├──────────────┬───────────────────────────────────────────────────────┤
-│ CATEGORIES   │ Home                                                  │  ← breadcrumb row
-│ ─────────    │ Top rated                                             │
-│ ▸ All        │ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐         │
-│ ▸ Electronics│ │ img  │ │ img  │ │ img  │ │ img  │ │ img  │         │  ← N featured
-│ ▸ Jewelery   │ │title │ │title │ │title │ │title │ │title │         │     (config)
-│ ▸ Men's      │ │★4.7  │ │★4.6  │ │★4.5  │ │★4.4  │ │★4.3  │         │
-│ ▸ Women's    │ │$109  │ │$22   │ │$55   │ │$15   │ │$64   │         │
-│              │ └──────┘ └──────┘ └──────┘ └──────┘ └──────┘         │
-└──────────────┴───────────────────────────────────────────────────────┘
-
-Category page                              Product page
-┌─────────────────────────────────┐       ┌──────────────────────────────────┐
-│ Home / Electronics        6 items│       │ Home / Electronics / SSD 1TB     │
-│ Top rated: Electronics (limit 3) │       │ ┌──────────┐  SSD 1TB            │
-│ [card][card][card]               │       │ │  image   │  ★ 4.8 (319)        │
-│ More in Electronics              │       │ │          │  $109.00            │
-│ [card][card][card][card]         │       │ └──────────┘  description…       │
-│ [card][card][card][card]         │       │               [ Enquire ]  ──────┼─▶ offcanvas:
-│        « 1 2 »                   │       └──────────────────────────────────┘   name · email ·
-└─────────────────────────────────┘                                              phone · message
-                                                                                  [Submit] → Thank you
-```
+| Top bar | Brand, **search box + Search button**, light/dark toggle |
+| Sidebar | **Category links** from `GET /api/categories`, active one highlighted; slides in on mobile |
+| Page header | Breadcrumb `Catalogue / Category / Product` and page title |
+| Product tiles | Bootstrap cards in a responsive grid; the whole tile is one accessible link |
+| Enquiry | Form in a right-hand offcanvas panel on the product page; "Thank you" state in the panel |
+| States | Skeleton loaders, empty states ("no matches"), error alerts with **Try again** |
 
 ### Component rules
 
-- **Pages** fetch data via hooks; **components** are presentational (props in, JSX out). The creative
-  agency can restyle the components without touching data code.
-- Only `src/api/client.ts` knows the backend URL (`VITE_API_URL`). The client never calls Fake Store.
-- Every data view has loading, empty and error states (portal `data_empty_page` / alert equivalents).
-- Accessibility: labelled form fields, focus moved to the offcanvas when it opens, `alt` text on images,
-  visible focus ring in the portal primary colour.
+- **Pages** fetch data via hooks; **components** are presentational (props in, JSX out).
+- Only `src/api/client.ts` knows the backend URL. The client never calls Fake Store.
+- Every data view has loading, empty and error states.
+- Accessibility: labelled fields, focus moved into the enquiry panel, Escape closes it, `alt` text,
+  visible focus ring, a skip link.
+
+### Enquiry email: one Blade template plus a configurable subject
+
+| What | Where | How to change |
+|---|---|---|
+| **Email content** (wording, layout, styling) | One Blade file: `backend/resources/views/mail/enquiry.blade.php` | Edit the file, or set `ENQUIRY_EMAIL_TEMPLATE` to another view |
+| **Email subject** | `config/catalogue.php` → `enquiries.email.subject` | `ENQUIRY_EMAIL_SUBJECT="New enquiry: :product"` |
+
+Subject placeholders: `:product`, `:product_id`, `:price`, `:name`, `:email`, `:enquiry_id`. The subject
+is forced onto one line, since it's an email header. The template receives `$enquiry`, `$price` and
+`$brand`. Customer input is printed with `{{ }}`, so it's always escaped. The template uses a table
+layout with inline styles because many email clients ignore `<style>` blocks.
 
 ---
 

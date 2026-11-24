@@ -5,7 +5,7 @@ import { SearchBar } from '../components/SearchBar'
 import { useApi } from '../hooks/useApi'
 import { useTheme } from '../theme/useTheme'
 
-/** Partner-portal style shell: top bar (brand · search · theme), category sidebar, content area. */
+/** App shell: top bar (brand · search · theme), category sidebar, content area. */
 export function AppShell() {
   const { theme, toggle } = useTheme()
   const [menuOpen, setMenuOpen] = useState(false)

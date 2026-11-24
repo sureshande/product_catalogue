@@ -20,7 +20,7 @@
 |---|---|---|
 | Admin UI for top-rated products | Config file | Not in the criteria. Config is versioned, reviewable and testable. `FeaturedProductRepository` is the seam for a database and admin screen. The cost: a change needs a deploy or restart. |
 | Real search engine | In-memory filtering inside the Fake Store adapter | Fake Store has 20 products and no search API. The `ProductQuery` contract (category, search, exclude, sort, page) is what a database or OpenSearch adapter would implement with an indexed query. |
-| Final visual design | Bootstrap 5 with a token file, following a design language I've used before (partner-portal style) | The creative agency is still working on it. Re-branding means editing `tokens.scss`, not components. No third-party logos or icon fonts were copied. |
+| Final visual design | A neutral placeholder theme: Bootstrap 5 + Bootstrap Icons (both MIT) and the system font stack, with all colours in one token file | The creative agency is still working on it. Re-branding means editing `tokens.scss`, not components. Nothing is copied from any company's product, logo, fonts or CSS, so there are no licensing or IP concerns. |
 | Production web server | `php artisan serve` with 4 workers in Docker | Fine for local use. The AWS target is php-fpm + nginx (or Octane) on ECS; see `docs/PLAN.md`. |
 | Infrastructure as code | Documented, not built | The time-box. The constraint is only "AWS-compatible": MySQL→RDS, database queue→SQS, Mailpit→SES, and Redis/ElastiCache for cache are all config changes. |
 | Browser E2E (Playwright) | Not done | The critical path is covered by API feature tests, frontend integration tests through the full route tree, and the CI Docker smoke test (which submits a real enquiry and checks Mailpit). |
@@ -36,6 +36,7 @@ The three things the brief says will change are each **one seam**:
 | **Product data source** (PIM, database, a different supplier) | A new `ProductSource` implementation and one `match` arm in `AppServiceProvider` | Services, controllers, API contract, React app, all feature tests |
 | **Look & feel** | `frontend/src/theme/tokens.scss` (colours, fonts, radius); presentational components if layout changes | Data fetching, API client, routing |
 | **Email provider** | `MAIL_MAILER=ses` (or postmark, etc.) in env | All code |
+| **Email content / subject** | The Blade file `resources/views/mail/enquiry.blade.php` (or `ENQUIRY_EMAIL_TEMPLATE`); `ENQUIRY_EMAIL_SUBJECT` | All PHP code |
 
 **Growing to millions of products or enquiries** (detail and diagrams in `docs/PLAN.md` §8):
 - **Products:** sync them from the supplier into our own read model (RDS) with queued, idempotent imports. A `DatabaseProductSource` answers `ProductQuery` with indexed SQL, and keyset pagination replaces offset. Full-text search moves to OpenSearch.

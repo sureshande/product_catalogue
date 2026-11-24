@@ -5,7 +5,7 @@ export interface Crumb {
   to?: string
 }
 
-/** Breadcrumb + title row (portal "inner-header"). */
+/** Breadcrumb + page title row. */
 export function PageHeader({ title, crumbs = [], children }: { title: string; crumbs?: Crumb[]; children?: React.ReactNode }) {
   return (
     <div className="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-4">

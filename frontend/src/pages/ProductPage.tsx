@@ -46,7 +46,7 @@ export function ProductPage() {
                 {product.description}
               </p>
               <div>
-                <button type="button" className="btn btn-accent btn-lg px-4" onClick={() => setEnquiring(true)}>
+                <button type="button" className="btn btn-primary btn-lg px-4" onClick={() => setEnquiring(true)}>
                   <i className="bi bi-envelope me-2" aria-hidden="true" />
                   Enquire
                 </button>

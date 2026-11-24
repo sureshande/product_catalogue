@@ -51,6 +51,8 @@ services:
       MAIL_FROM_ADDRESS: catalogue@example.test
       MAIL_FROM_NAME: Product Catalogue
       SALES_INBOX_EMAIL: ${SALES_INBOX_EMAIL:-sales@example.test}
+      ENQUIRY_EMAIL_SUBJECT: "${ENQUIRY_EMAIL_SUBJECT:-New enquiry: :product}"
+      ENQUIRY_EMAIL_TEMPLATE: ${ENQUIRY_EMAIL_TEMPLATE:-mail.enquiry}
       FAKESTORE_BASE_URL: ${FAKESTORE_BASE_URL:-https://fakestoreapi.com}
       CATALOGUE_CACHE_TTL: ${CATALOGUE_CACHE_TTL:-600}
       CATALOGUE_HOMEPAGE_LIMIT: ${CATALOGUE_HOMEPAGE_LIMIT:-5}

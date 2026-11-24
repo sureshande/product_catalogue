@@ -1,6 +1,6 @@
 @import './tokens';
 
-// ---- Shell: top bar + sidebar + content (partner-portal layout) ----
+// ---- Shell: top bar + sidebar + content ----
 
 .topbar {
   position: sticky;
@@ -8,7 +8,7 @@
   z-index: 1020;
   height: var(--topbar-height);
   background: var(--bs-body-bg);
-  box-shadow: 0 0.125rem 0.5rem rgba(75, 70, 92, 0.08);
+  border-bottom: 1px solid var(--bs-border-color-translucent);
 }
 
 .brand-badge {
@@ -16,8 +16,8 @@
   place-items: center;
   width: 2rem;
   height: 2rem;
-  border-radius: 0.5rem;
-  background: var(--accent-gradient);
+  border-radius: $border-radius;
+  background: var(--brand-accent);
   color: #fff;
 }
 
@@ -64,18 +64,10 @@
     background: var(--bs-tertiary-bg);
   }
 
-  // Gradient text for the active item, as in the portal menu.
   &.active {
     font-weight: 600;
-    background: var(--bs-tertiary-bg);
-
-    span,
-    i {
-      background: var(--accent-gradient);
-      background-clip: text;
-      -webkit-background-clip: text;
-      color: transparent;
-    }
+    color: var(--brand-accent);
+    background: rgba($primary, 0.1);
   }
 }
 
@@ -91,7 +83,7 @@
   &:hover,
   &:focus-within {
     transform: translateY(-2px);
-    box-shadow: 0 0.5rem 1.5rem rgba(75, 70, 92, 0.16);
+    box-shadow: 0 0.5rem 1.25rem rgba(30, 36, 48, 0.12);
   }
 
   .product-image {
@@ -117,20 +109,8 @@
   background: #fff;
 }
 
-.btn-accent {
-  background: var(--accent-gradient);
-  border: 0;
-  color: #fff;
-
-  &:hover,
-  &:focus-visible {
-    color: #fff;
-    filter: brightness(1.05);
-  }
-}
-
 .rating-stars {
-  color: #ffb400;
+  color: $warning;
 }
 
 // Honeypot field: off-screen for humans, still in the DOM for bots.

@@ -35,10 +35,13 @@ scale path, AWS target) and revised as decisions changed. The code was then buil
 3. **"Use Electronics, Home, Appliances, Books, Mobiles as categories."** The AI pointed out that Fake
    Store has none of those except Electronics, so it would have meant inventing product mappings. I chose to
    use the supplier's real categories and record it as an assumption.
-4. **"Use our partner portal UI for the React design."** Reused the *design language* (Bootstrap 5, Public Sans,
-   azure/jade palette, gradient accent, top bar plus sidebar shell, offcanvas forms, dark mode), but the AI
-   flagged that the employer's logo, proprietary icon font and CSS files must not be copied into a repo
-   going to another company. Rebuilt with Bootstrap Icons and a token file.
+4. **"The CSS must not be company-specific; no copyright issues."** The first UI version reused the
+   look of an internal product I work on (palette, gradient, web font). On review I asked for that to be
+   removed. The theme is now a neutral placeholder built only from MIT-licensed open source (Bootstrap,
+   Bootstrap Icons) and system fonts, with every brand value in one token file for the agency to replace.
+   **"Email content and subject must be configurable, with the content as one Blade template."** The AI's
+   first attempt spread the wording across config keys, a layout and separate HTML and text views. I
+   redirected it to a single Blade file for the whole email, plus a config/env subject with placeholders.
 5. **Testing rule: "a test that cannot fail is worse than none."** After a false-positive test was found
    (below), mutation checks were run on key tests: break the code, watch the test fail, restore.
 
@@ -50,6 +53,7 @@ scale path, AWS target) and revised as decisions changed. The code was then buil
 | **The "serve stale cache when the supplier is down" test passed without testing anything.** `Http::fake()` appends stubs and the first match wins, so "supplier down" never took effect after "supplier up". | A sibling test (503 when the supplier is down) failed unexpectedly, which exposed the helper bug. | `fakeStoreDown()` swaps in a fresh HTTP factory. Verified by deleting the stale fallback and watching the test fail. |
 | The enquiry panel's reset effect depended on the `onClose` prop, so a parent passing a new function on each render would **wipe the form while the user typed**. | Code review of the generated component. | The callback is held in a ref; the effect depends only on `open`. |
 | Behind nginx, every customer would have shared nginx's IP, so **one user could exhaust the enquiry rate limit for everyone**. | Reviewing the Docker topology against the rate limiter. | `TRUSTED_PROXIES` env; the API port isn't published, so only nginx can set `X-Forwarded-For`. |
+| The default subject `New enquiry: :product` was put **unquoted** in `docker-compose.yml`, where `: ` is invalid YAML, so **the whole compose file failed to load**. The restart command hid the error and the old containers kept running. | Overriding the subject through env had no effect; `docker compose config` showed the parse error. | Quoted the value; verified both the override and the default subject arrive in Mailpit. |
 | `docker compose` would have tried to **pull** the worker's image (a locally built tag) before building it. | Review of the compose file. | The worker also declares `build:`, which shares the cached image. |
 
 ## What I reviewed myself

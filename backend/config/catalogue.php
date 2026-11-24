@@ -51,6 +51,14 @@ return [
     'enquiries' => [
         'sales_inbox' => env('SALES_INBOX_EMAIL', 'sales@example.test'),
         'rate_limit_per_minute' => (int) env('ENQUIRY_RATE_LIMIT_PER_MINUTE', 5),
+
+        // The email sent to the sales inbox. All of its content (wording, layout, styling) lives in ONE
+        // Blade template — edit resources/views/mail/enquiry.blade.php, or point this at your own view.
+        'email' => [
+            'template' => env('ENQUIRY_EMAIL_TEMPLATE', 'mail.enquiry'),
+            // Placeholders: :product  :product_id  :price  :name  :email  :enquiry_id
+            'subject' => env('ENQUIRY_EMAIL_SUBJECT', 'New enquiry: :product'),
+        ],
     ],
 
 ];

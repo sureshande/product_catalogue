@@ -11,7 +11,7 @@ interface Props {
 type Fields = 'name' | 'email' | 'phone' | 'message'
 const EMPTY = { name: '', email: '', phone: '', message: '', website: '' }
 
-/** Enquiry form in a right-hand offcanvas panel (portal pattern). */
+/** Enquiry form in a right-hand offcanvas panel. */
 export function EnquiryPanel({ product, open, onClose }: Props) {
   const [form, setForm] = useState(EMPTY)
   const [errors, setErrors] = useState<Partial<Record<Fields, string>>>({})
@@ -148,7 +148,7 @@ export function EnquiryPanel({ product, open, onClose }: Props) {
                 <label htmlFor="enquiry-website">Website</label>
                 <input id="enquiry-website" tabIndex={-1} autoComplete="off" value={form.website} onChange={update('website')} />
               </div>
-              <button type="submit" className="btn btn-accent w-100" disabled={submitting}>
+              <button type="submit" className="btn btn-primary w-100" disabled={submitting}>
                 {submitting ? 'Sending…' : 'Send enquiry'}
               </button>
             </form>

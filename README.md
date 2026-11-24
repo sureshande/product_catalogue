@@ -218,6 +218,23 @@ Edit [`backend/config/catalogue.php`](backend/config/catalogue.php):
 Other settings (timeouts, cache TTL, sales inbox, rate limit) are listed in
 [`backend/.env.example`](backend/.env.example).
 
+## Configuring the enquiry email
+
+| What | Where |
+|---|---|
+| **Content** (all wording, layout, styling) | One Blade template: [`backend/resources/views/mail/enquiry.blade.php`](backend/resources/views/mail/enquiry.blade.php). Edit it, or point `ENQUIRY_EMAIL_TEMPLATE` at another view. |
+| **Subject** | `ENQUIRY_EMAIL_SUBJECT` (default `New enquiry: :product`). Placeholders: `:product` `:product_id` `:price` `:name` `:email` `:enquiry_id` |
+| **Recipient** | `SALES_INBOX_EMAIL` |
+
+The template receives `$enquiry` (all fields), `$price` and `$brand`. Print customer input with `{{ }}` so
+it's escaped. With Docker, set these in the root `.env` and run `docker compose up -d`.
+
+## Look & feel
+
+A neutral placeholder theme until the real brand arrives. It's built only from MIT-licensed open source
+(Bootstrap 5, Bootstrap Icons) and the system font stack, so there is nothing to license and no third-party
+branding. Re-brand by editing [`frontend/src/theme/tokens.scss`](frontend/src/theme/tokens.scss).
+
 ## API
 
 | Method | Endpoint | |
