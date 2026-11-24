@@ -62,12 +62,16 @@ scale path, AWS target) and revised as decisions changed. The code was then buil
 
 ## Time spent
 
-<!-- Fill in your real numbers. Going over the time-box is fine if stated honestly. -->
+Measured from the timestamps in the Claude Code session log and the git history, all on 24 Nov 2026 (UTC).
+Total active time was **about 2 hours**, inside the 2–3 hour time-box. The session spanned 04:17–08:20, with a
+break of about 2 hours (04:30–06:35) that isn't counted.
 
-| Activity | Time |
-|---|---|
-| Planning (brief, PLAN.md, decisions) | |
-| Building (backend, frontend, Docker) | |
-| Testing | |
-| Reviewing AI output and docs | |
-| **Total** | |
+| Activity | Time | What happened (UTC) |
+|---|---|---|
+| Planning (brief, PLAN.md, decisions) | ~45 min | 04:17–04:30: read the brief and wrote the first `PLAN.md` with flow diagrams. 06:35–07:07: design decisions (configurable top-rated lists, categories, one list vs two, UI approach). |
+| Building (backend, frontend, Docker) | ~20 min | 07:07–07:28: Laravel API, React client, Docker/CI and docs, built by the agent against the plan; first commit at 07:28. |
+| Testing | ~25 min | 07:31–07:57: Docker set up and linked to WSL, full stack started, every acceptance criterion exercised end to end (enquiry email checked in Mailpit, rate limit, DB rows). Automated tests (Pest + Vitest) were written and run during building. |
+| Reviewing AI output, rework and docs | ~25 min | 07:57–08:20: reviewed the result and asked for changes: neutral, licence-safe theme (no company styling); email content as one Blade template with a configurable subject; fixed the search × not clearing results; fixed the YAML bug found while testing. |
+| **Total** | **~1 h 55 min** | |
+
+<!-- Add any reading/review you did outside the session (e.g. reading the code before submitting) to the Reviewing row and the total. -->
