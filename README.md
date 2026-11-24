@@ -21,21 +21,109 @@ More detail: [DECISIONS.md](DECISIONS.md) (assumptions and trade-offs) · [AI_US
 
 ---
 
-## Run it (≈ 5 minutes, needs Docker only)
+## Setup
+
+The only thing you need is **Docker** (with Docker Compose v2). PHP, Node and MySQL all run inside containers.
+
+### 1. Install Docker
+
+Skip this step if `docker compose version` already prints a version.
+
+<details open>
+<summary><b>Ubuntu / Debian, including WSL2 on Windows</b></summary>
+
+These are the commands from [Docker's official guide](https://docs.docker.com/engine/install/ubuntu/).
+On WSL2, first check that systemd is enabled: `/etc/wsl.conf` should contain `[boot]` / `systemd=true`.
+If it doesn't, add those lines, run `wsl --shutdown` in Windows PowerShell, and reopen the terminal.
 
 ```bash
-git clone <this repo> && cd product-catalogue
+# Remove old/unofficial packages if present (safe if none are installed)
+for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do
+  sudo apt-get remove -y $pkg 2>/dev/null
+done
+
+# Add Docker's apt repository
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
+https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
+  | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Install Docker Engine + Compose plugin
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Start Docker now and on every boot
+sudo systemctl enable --now docker
+
+# Run docker without sudo (then open a NEW terminal, or run: newgrp docker)
+sudo usermod -aG docker $USER
+```
+
+For Debian, replace `ubuntu` with `debian` in both URLs.
+</details>
+
+<details>
+<summary><b>macOS</b></summary>
+
+Install [Docker Desktop for Mac](https://docs.docker.com/desktop/setup/install/mac-install/) (choose Apple
+silicon or Intel), open it once, and wait until the whale icon says *Docker Desktop is running*.
+Or with Homebrew: `brew install --cask docker`, then open Docker from Applications.
+</details>
+
+<details>
+<summary><b>Windows (without WSL)</b></summary>
+
+Install [Docker Desktop for Windows](https://docs.docker.com/desktop/setup/install/windows-install/),
+keep the *Use WSL 2* option ticked, restart if asked, and open Docker Desktop once. Run the commands
+below in PowerShell or a WSL terminal.
+</details>
+
+### 2. Check Docker works
+
+```bash
+docker --version             # Docker version 2x.x
+docker compose version       # Docker Compose version v2.x
+docker run --rm hello-world  # prints "Hello from Docker!"
+```
+
+### 3. Get the code
+
+```bash
+git clone <this repo URL> product-catalogue
+cd product-catalogue
+```
+
+### 4. Start everything
+
+```bash
 docker compose up --build
 ```
+
+The first run takes about 3–5 minutes to download images and build. Later runs take seconds. It's ready
+when the log shows `web-1` started and `api-1` answering `/api/health`. No `.env` file is needed: every
+setting has a working default. To change one, run `cp .env.example .env` and edit it.
+
+It starts five containers:
+
+| Container | What it is |
+|---|---|
+| `web` | nginx serving the React app, proxying `/api` to the backend |
+| `api` | Laravel API (runs database migrations on start) |
+| `worker` | Laravel queue worker that sends enquiry emails |
+| `mysql` | MySQL 8.4: enquiries, queue, cache |
+| `mailpit` | A fake mail server with a web inbox, so no email account is needed |
+
+### 5. Open it
 
 | What | URL |
 |---|---|
 | **The app** | http://localhost:8080 |
 | **Sales inbox** (Mailpit: enquiry emails arrive here) | http://localhost:8025 |
-| API health | http://localhost:8080/api/health |
-
-There is no `.env` to create; everything has a working default. To change a setting, `cp .env.example .env`
-and edit it. Stop with `Ctrl+C`; reset the database with `docker compose down -v`.
+| API health check | http://localhost:8080/api/health → `{"status":"ok"}` |
 
 Try the acceptance criteria:
 1. **Home**: the 5 "top rated" products chosen in config.
@@ -45,13 +133,40 @@ Try the acceptance criteria:
 5. **Enquiry**: on a product, click **Enquire**, fill in the form, and you get a *Thank you*. Open
    http://localhost:8025 to see the email in the sales inbox.
 
-## Run the tests
-
-Tests need no network and no database server.
+### 6. Stop, restart, reset
 
 ```bash
-# Backend (PHP 8.3+ with pdo_sqlite)
+Ctrl+C                       # stop (when running in the foreground)
+docker compose up -d         # start in the background
+docker compose logs -f api   # follow logs of one service (api, worker, web, mysql, mailpit)
+docker compose down          # stop and remove containers (data is kept)
+docker compose down -v       # also delete the database volume (fresh start)
+```
+
+### Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| `permission denied ... /var/run/docker.sock` | You aren't in the `docker` group yet. Run `newgrp docker` or open a new terminal (after `sudo usermod -aG docker $USER`). |
+| `Cannot connect to the Docker daemon` | Start it: `sudo systemctl start docker` (Linux/WSL), or open Docker Desktop (Mac/Windows). |
+| `port is already allocated` on 8080 or 8025 | Another program uses the port. Stop it, or change the left-hand port in `docker-compose.yml` (e.g. `"8081:80"`). |
+| Home page shows *"catalogue is temporarily unavailable"* | The containers can't reach `https://fakestoreapi.com`. Check your internet/proxy; `docker compose logs api` shows the error. Data is cached for 10 minutes once loaded. |
+| No email in Mailpit | Check the worker: `docker compose logs worker`. Emails are sent a second or two after the *Thank you*. |
+| Anything else odd after pulling changes | `docker compose down -v && docker compose up --build` |
+
+## Run the tests
+
+Tests need no network. The backend suite uses SQLite in memory by default.
+
+```bash
+# Backend (PHP 8.3+ with the pdo_sqlite extension)
 cd backend && composer install && ./vendor/bin/pest
+
+# ...or, if your PHP has no SQLite driver, against an empty MySQL database:
+DB_CONNECTION=mysql DB_DATABASE=catalogue_test DB_USERNAME=<user> DB_PASSWORD=<password> ./vendor/bin/pest
+
+# ...or with no local PHP at all, inside Docker:
+docker run --rm -v "$PWD/backend":/app -w /app composer:2.8 sh -c "composer install -q && ./vendor/bin/pest"
 
 # Frontend (Node 18+)
 cd frontend && npm ci && npm test
